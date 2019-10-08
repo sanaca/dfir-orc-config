@@ -23,5 +23,6 @@
     <archive name="Tools" format="7z" compression="Ultra">
         <file name="DFIR-Orc_x64.exe" path=".\tools\DFIR-Orc_x64.exe"/>
         <file name="autorunsc.exe" path=".\tools\autorunsc.exe"/>
+        <file name="winpmem.exe" path=".\tools\winpmem.exe"/>
     </archive>
 </toolembed>
