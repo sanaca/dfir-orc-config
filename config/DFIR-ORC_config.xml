@@ -2,9 +2,38 @@
 <wolf childdebug="no" command_timeout="600">
     <log disposition="truncate">ORCSYS_{SystemType}_{FullComputerName}_{TimeStamp}.log</log>
 
+	<!--The archives order define the real execute order.
+	    If you want, you can put the memory dump at another place but at the 1st
+		you will not have any trace of the ORCSYS and ORC YARA execution
+		-->
+	<!--Without the optional parameter set to yes ... optional="yes" to have a memory dump-->
+	<!--<archive name="ORCMEM_{SystemType}_{FullComputerName}_{TimeStamp}_Memory.7z" keyword="Memory" concurrency="2" repeat="Once" compression="fast" archive_timeout="240" optional="yes">-->
+	<archive name="ORCMEM_{SystemType}_{FullComputerName}_{TimeStamp}_Memory.7z" keyword="Memory" concurrency="2" repeat="Once" compression="fast" archive_timeout="240">
+		<restrictions JobMemoryLimit="3G" ProcessMemoryLimit="3G" ElapsedTimeLimit="240"/>
+
+		<!--GetMemory command to use "winpmem.exe output -" stream to StdOut -->
+		<command keyword="GetMemory">
+			<execute name="winpmem.exe" run="7z:#Tools|winpmem.exe"/>
+			<argument>--output -</argument>
+			<output name="Memory_{FullComputerName}_{TimeStamp}.aff4" source="StdOut"/>
+			<output name="Winpmem.log" source="StdErr"/>
+		</command>
+		
+		<command keyword="GetMemFiles">
+			<execute name="DFIR-Orc.exe" run="self:#GetThis"/>
+			<argument>/config=res:#GetMemFiles_config.xml</argument>
+			<output name="GetMemFiles.7z" source="File" argument="/out={FileName}"/>
+			<output name="GetPageFile.log" source="StdOutErr"/>
+		</command>
+	</archive>
+	<!--ORCSYS config-->
     <archive name="ORCSYS_{SystemType}_{FullComputerName}_{TimeStamp}_Main.7z" keyword="Main" concurrency="2" repeat="Once" compression="fast">
         <restrictions JobMemoryLimit="3G" ProcessMemoryLimit="2G" ElapsedTimeLimit="360"/>
 
+		<!--If the optional argument is set to "yes" then
+		    by default will not be executed.
+			You need to add /+key={command keywords} when you
+			launch DFIR-ORC-->
         <command keyword="SystemInfo">
             <execute name="systeminfo.exe" run="%windir%\System32\systeminfo.exe"/>
             <argument>/FO csv</argument>
@@ -42,6 +71,7 @@
             <output name="NTFSInfo.log" source="StdOutErr"/>
         </command>
 
+		<!--Optional parameter set "yes", not execute by default-->
         <command keyword="NTFSInfoHashPE" queue="flush" optional="yes">
             <execute name="DFIR-ORC.exe" run="self:#NTFSInfo"/>
             <argument>/config=res:#NTFSInfoHashPE_config.xml</argument>
@@ -57,6 +87,7 @@
             <output name="FatInfo.log" source="StdOutErr"/>
         </command>
 
+		<!--Optional parameter set "yes", not execute by default-->
         <command keyword="FatInfoHashPE"  optional="yes">
             <execute name="DFIR-Orc.exe" run="self:#FatInfo"/>
             <argument>/config=res:#FatInfoHashPE_config.xml</argument>
@@ -101,6 +132,7 @@
 
     </archive>
 
+	<!--ORCYARA config optional does not execute by default optional="yes" parameter set-->
     <archive name="ORCYARA_{SystemType}_{FullComputerName}_{TimeStamp}_Yara.7z" keyword="Yara" concurrency="2" repeat="Once" compression="fast" archive_timeout="240" optional="yes">
         <restrictions JobMemoryLimit="3G" ProcessMemoryLimit="3G" ElapsedTimeLimit="240"/>
 
